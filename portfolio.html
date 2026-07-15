@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mayur Dudhal | Geospatial Data Scientist</title>
+    <!-- FontAwesome & Leaflet CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    
+    <style>
+        /* ==========================================
+           1. VARIABLES & THEMING
+           ========================================== */
+        :root {
+            --bg-primary: #0b0f19;       /* Ultra-Deep Slate */
+            --bg-secondary: #131c2e;     /* Component Canvas */
+            --accent: #10b981;           /* Emerald Geo-Vector */
+            --accent-hover: #059669;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #1e293b;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        [data-theme="light"] {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --accent: #059669;
+            --accent-hover: #047857;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+        }
+
+        /* ==========================================
+           2. RESET & BASE LAYOUTS
+           ========================================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            line-height: 1.6;
+            overflow-x: hidden;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .section {
+            padding: 100px 10%;
+        }
+
+        .bg-light {
+            background-color: var(--bg-secondary);
+        }
+
+        .section-title {
+            font-size: 2.2rem;
+            margin-bottom: 50px;
+            position: relative;
+            display: inline-block;
+            letter-spacing: -0.5px;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: -8px;
+            width: 40px;
+            height: 4px;
+            background-color: var(--accent);
+            border-radius: 2px;
+        }
+
+        strong {
+            color: var(--accent);
+        }
+
+        /* ==========================================
+           3. NAVIGATION
+           ========================================== */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: rgba(19, 28, 46, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+            z-index: 1000;
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 18px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--text-main);
+            text-decoration: none;
+            letter-spacing: -0.5px;
+        }
+
+        .logo span {
+            color: var(--accent);
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 30px;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: var(--transition);
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            color: var(--accent);
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        #theme-toggle {
+            background: none;
+            border: none;
+            color: var(--text-main);
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        .hamburger {
+            display: none;
+            cursor: pointer;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .hamburger span {
+            width: 24px;
+            height: 2px;
+            background-color: var(--text-main);
+        }
+
+        /* ==========================================
+           4. HERO & SPATIAL ENGINE CANVAS
+           ========================================== */
+        .hero-section {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 0 10%;
+            position: relative;
+        }
+
+        .hero-container {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 40px;
+            align-items: center;
+            width: 100%;
+            z-index: 2;
+        }
+
+        .hero-subtitle {
+            color: var(--accent);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            font-size: 0.85rem;
+            margin-bottom: 15px;
+        }
+
+        .hero-content h1 {
+            font-size: 4rem;
+            line-height: 1.1;
+            margin-bottom: 15px;
+            letter-spacing: -1px;
+        }
+
+        .hero-content h2 {
+            font-size: 1.6rem;
+            color: var(--text-muted);
+            font-weight: 400;
+            margin-bottom: 30px;
+        }
+
+        .hero-description {
+            color: var(--text-muted);
+            margin-bottom: 40px;
+            max-width: 560px;
+            font-size: 1.05rem;
+        }
+
+        .hero-cta {
+            display: flex;
+            gap: 20px;
+        }
+
+        .btn {
+            padding: 14px 32px;
+            border-radius: 6px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: var(--transition);
+            font-size: 0.95rem;
+        }
+
+        .btn-primary {
+            background-color: var(--accent);
+            color: #ffffff !important;
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--accent-hover);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            background-color: rgba(255,255,255,0.02);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--border-color);
+        }
+
+        .hero-visual {
+            display: flex;
+            justify-content: center;
+            position: relative;
+        }
+
+        .spatial-radar {
+            width: 320px;
+            height: 320px;
+            border: 1px solid rgba(16, 185, 129, 0.15);
+            border-radius: 50%;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .spatial-radar::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 1px dashed rgba(16, 185, 129, 0.3);
+            border-radius: 50%;
+            animation: pulseRadar 4s linear infinite;
+        }
+
+        .radar-sweep {
+            position: absolute;
+            width: 50%;
+            height: 50%;
+            background: linear-gradient(45deg, rgba(16, 185, 129, 0.1), transparent);
+            transform-origin: bottom right;
+            top: 0;
+            left: 0;
+            border-radius: 100% 0 0 0;
+            animation: sweep 8s linear infinite;
+        }
+
+        @keyframes sweep {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes pulseRadar {
+            0% { transform: scale(0.8); opacity: 0.8; }
+            100% { transform: scale(1.3); opacity: 0; }
+        }
+
+        /* ==========================================
+           5. GEOSPATIAL LIVE MAP SYSTEM
+           ========================================== */
+        .map-section-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        #portfolio-map {
+            width: 100%;
+            height: 480px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+
+        .leaflet-popup-content-wrapper {
+            background: var(--bg-secondary) !important;
+            color: var(--text-main) !important;
+            border: 1px solid var(--border-color);
+            font-family: inherit;
+        }
+        .leaflet-popup-tip {
+            background: var(--bg-secondary) !important;
+        }
+
+        /* ==========================================
+           6. EXPERIENCE TIMELINE
+           ========================================== */
+        .timeline {
+            position: relative;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .timeline::after {
+            content: '';
+            position: absolute;
+            width: 2px;
+            background-color: var(--border-color);
+            top: 0;
+            bottom: 0;
+            left: 20px;
+        }
+
+        .timeline-item {
+            padding: 25px 0 25px 50px;
+            position: relative;
+        }
+
+        .timeline-dot {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            background-color: var(--accent);
+            border-radius: 50%;
+            left: 14px;
+            top: 32px;
+            z-index: 2;
+            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2);
+        }
+
+        .timeline-date {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--accent);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+            letter-spacing: 1px;
+        }
+
+        .timeline-content {
+            background-color: var(--bg-primary);
+            padding: 24px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .timeline-content h3 {
+            font-size: 1.25rem;
+            letter-spacing: -0.3px;
+        }
+
+        .timeline-content h4 {
+            color: var(--text-muted);
+            font-weight: 400;
+            font-size: 0.95rem;
+            margin-bottom: 12px;
+        }
+
+        .timeline-content p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        /* ==========================================
+           7. PROJECTS & CERTIFICATIONS GRIDS
+           ========================================== */
+        .projects-grid, .certifications-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 30px;
+        }
+
+        .project-card, .cert-card {
+            background-color: var(--bg-secondary);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .project-card:hover, .cert-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+        }
+
+        .project-img-placeholder, .cert-icon-placeholder {
+            height: 140px;
+            background: linear-gradient(135deg, rgba(19, 28, 46, 0.4), rgba(30, 41, 59, 0.8));
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .project-img-placeholder i, .cert-icon-placeholder i {
+            font-size: 2.6rem;
+            color: var(--accent);
+            opacity: 0.8;
+        }
+
+        .project-info, .cert-info {
+            padding: 24px;
+        }
+
+        .project-tag, .cert-tag {
+            font-size: 0.75rem;
+            background-color: var(--bg-primary);
+            color: var(--accent);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 12px;
+        }
+
+        .project-info h3, .cert-info h3 {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            letter-spacing: -0.3px;
+        }
+
+        .project-info p, .cert-info p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* Modal Architecture */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(11, 15, 25, 0.85);
+            backdrop-filter: blur(8px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-wrapper {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            width: 90%;
+            max-width: 640px;
+            border-radius: 12px;
+            padding: 35px;
+            position: relative;
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.active .modal-wrapper {
+            transform: translateY(0);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.4rem;
+            cursor: pointer;
+        }
+
+        .modal-close:hover {
+            color: var(--accent);
+        }
+
+        .modal-body h3 {
+            font-size: 1.6rem;
+            margin-bottom: 15px;
+            letter-spacing: -0.5px;
+        }
+
+        .modal-body h4 {
+            color: var(--accent);
+            font-size: 0.95rem;
+            margin-top: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .modal-body p {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            margin-top: 5px;
+        }
+
+        /* ==========================================
+           8. TECH EXPERTISE & SKILLS
+           ========================================== */
+        .skills-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+        }
+
+        .skills-category {
+            background-color: var(--bg-primary);
+            padding: 30px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .skills-category h3 {
+            margin-bottom: 20px;
+            font-size: 1.15rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .skills-category h3 i {
+            color: var(--accent);
+        }
+
+        .skill-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .skill-tags span {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            padding: 6px 14px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        /* ==========================================
+           9. CONTACT & FOOTER
+           ========================================== */
+        .contact-container {
+            background-color: var(--bg-secondary);
+            padding: 50px 40px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            max-width: 650px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .contact-links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        .contact-links a {
+            color: var(--text-main);
+            text-decoration: none;
+            padding: 12px 24px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+        }
+
+        .contact-links a:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background-color: rgba(16, 185, 129, 0.02);
+        }
+
+        .footer {
+            text-align: center;
+            padding: 40px;
+            border-top: 1px solid var(--border-color);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* ==========================================
+           10. RESPONSIVE QUERIES
+           ========================================== */
+        @media (max-width: 968px) {
+            .hero-container { grid-template-columns: 1fr; text-align: center; }
+            .hero-description { margin: 0 auto 35px auto; }
+            .hero-cta { justify-content: center; }
+            .hero-visual { order: -1; }
+            #portfolio-map { height: 360px; }
+        }
+
+        @media (max-width: 768px) {
+            .section { padding: 60px 5%; }
+            .hamburger { display: flex; }
+            .nav-links {
+                position: absolute; top: 100%; left: 0; width: 100%;
+                background-color: var(--bg-secondary);
+                flex-direction: column; padding: 20px; gap: 15px;
+                border-bottom: 1px solid var(--border-color); display: none;
+            }
+            .nav-links.active { display: flex; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="#" class="logo">MD<span>.geo</span></a>
+            <ul class="nav-links">
+                <li><a href="#home" class="active">Home</a></li>
+                <li><a href="#about">About</a></li>
+                <li><a href="#spatial-intelligence">Live Engine</a></li>
+                <li><a href="#experience">Experience</a></li>
+                <li><a href="#projects">Projects</a></li>
+                <li><a href="#certifications">Certifications</a></li>
+                <li><a href="#skills">Skills</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+            <div class="nav-actions">
+                <button id="theme-toggle" aria-label="Toggle Theme"><i class="fas fa-moon"></i></button>
+                <div class="hamburger"><span></span><span></span><span></span></div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header id="home" class="hero-section">
+        <div class="hero-container">
+            <div class="hero-content">
+                <p class="hero-subtitle">Geospatial Portfolio Engine</p>
+                <h1>Mayur Dudhal</h1>
+                <h2>Geospatial Data Scientist | Urban Planner</h2>
+                <p class="hero-description">
+                    Bridging the gap between Urban Planning, Remote Sensing, and AI. Specializing in spatial analytics, Earth observation pipelines, and automated geocomputation to resolve territorial challenges.
+                </p>
+                <div class="hero-cta">
+                    <a href="#projects" class="btn btn-primary">View Projects</a>
+                    <a href="#contact" class="btn btn-secondary">Contact Me</a>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="spatial-radar">
+                    <div class="radar-sweep"></div>
+                    <i class="fas fa-satellite-dish" style="font-size: 3.5rem; color: var(--accent);"></i>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- About Section -->
+    <section id="about" class="section">
+        <h2 class="section-title">About Me</h2>
+        <div class="about-container">
+            <div class="about-text">
+                <p>I am a highly motivated geospatial professional combining a strong foundation in <strong>Urban and Regional Planning</strong> with advanced training in <strong>Geoinformatics</strong>. My expertise lies in leveraging spatial algorithms, satellite imagery, and programming frameworks to build actionable insights for urban mobility, hydrology, and public health.</p>
+                
+                <div class="education-grid">
+                    <div class="edu-card">
+                        <i class="fas fa-graduation-cap"></i>
+                        <h3>M.Sc. Geoinformatics</h3>
+                        <p>Savitribai Phule Pune University (SPPU)</p>
+                    </div>
+                    <div class="edu-card">
+                        <i class="fas fa-university"></i>
+                        <h3>B.Tech Urban and Regional Planning</h3>
+                        <p>COEP Technological University, Pune</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Interactive Live Map Section -->
+    <section id="spatial-intelligence" class="section bg-light">
+        <h2 class="section-title">Interactive Project Map</h2>
+        <div class="map-section-container">
+            <p style="color: var(--text-muted); margin-bottom: 20px; max-width: 700px;">
+                This live Leaflet engine interactive map references the localized coordination coordinates of my prime professional project clusters across India. Click vectors to isolate regional operational insights.
+            </p>
+            <div id="portfolio-map"></div>
+        </div>
+    </section>
+
+    <!-- Experience Section (Timeline Ordered Chronologically) -->
+    <section id="experience" class="section">
+        <h2 class="section-title">Professional Experience</h2>
+        <div class="timeline">
+            <!-- Role 1 (NIUM Analytics - Current / Most Recent) -->
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-date">May 2026 - Jul 2026</div>
+                <div class="timeline-content">
+                    <h3>Urban Analytics & Geospatial Intern</h3>
+                    <h4>National Institute of Urban Management (NIUM), Hyderabad</h4>
+                    <p>• Successfully completed a Summer Internship contributing to Urban Analytics, GIS, Remote Sensing, and Geospatial Intelligence projects.<br>
+                       • Worked on geospatial data acquisition, spatial database development, satellite image processing, and building footprint extraction.<br>
+                       • Handled hydrological and terrain analysis, Web GIS data preparation, and geospatial automation using Python and Google Earth Engine (GEE).<br>
+                       • Strengthened technical expertise in spatial analysis and geospatial technologies while supporting urban planning, municipal governance, and data-driven decision-making.</p>
+                </div>
+            </div>
+            <!-- Role 2 (NIUM OJT) -->
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-date">May 2026</div>
+                <div class="timeline-content">
+                    <h3>GIS & Geospatial Intern (OJT)</h3>
+                    <h4>National Institute of Urban Management (NIUM), Hyderabad</h4>
+                    <p>• Completed an On-the-Job Training (OJT) gaining hands-on experience in GIS, Remote Sensing, and Geospatial Technologies.<br>
+                       • Contributed directly to geospatial data acquisition, spatial database development, watershed and terrain analysis, and satellite image processing.<br>
+                       • Supported Web GIS data preparation and GIS-enabled urban governance solutions for municipal planning and decision support frameworks.</p>
+                </div>
+            </div>
+            <!-- Role 3 (Parisar Mobility) -->
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-date">Apr 2026 - May 2026</div>
+                <div class="timeline-content">
+                    <h3>Geospatial Research Intern (OJT) – Urban Mobility</h3>
+                    <h4>Parisar, Pune City</h4>
+                    <p>• Currently working as a Geospatial Research Intern (OJT) – Urban Mobility on the “Pune’s WBC (Walk, Bus, Cycle) Count: Mobility Scorecard of the City” project.<br>
+                       • Conducting geospatial field data collection and bus stop audits across Pune using standardized frameworks.<br>
+                       • Performing data validation, quality assessment, and preprocessing of public transport infrastructure layers.<br>
+                       • Analyzing transit accessibility, service performance, and commuter-level mobility patterns to generate data-driven insights for urban mobility planning and policy decisions.</p>
+                </div>
+            </div>
+            <!-- Role 4 (IIT Bombay) -->
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-date">March 2026 - Present</div>
+                <div class="timeline-content">
+                    <h3>National Geospatial Intern</h3>
+                    <h4>Indian Institute of Technology Bombay</h4>
+                    <p>• Developing a national-scale geospatial database of India's metro rail network using QGIS.<br>
+                       • Mapping metro corridors and station infrastructure across major metropolitan cities using spatial datasets.<br>
+                       • Conducting spatial and network-based accessibility analysis of metro stations and surrounding urban areas.<br>
+                       • Analyzing spatial patterns for metro network expansion forecasting aligned with SDG 11 and Vision 2047.</p>
+                </div>
+            </div>
+            <!-- Role 5 -->
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-date">Nov 2025 - March 2026</div>
+                <div class="timeline-content">
+                    <h3>Business Development Intern</h3>
+                    <h4>Earth Orbit (Geospatial Industry)</h4>
+                    <p>• Performed GIS & Remote Sensing mapping, spatial analysis, and data visualization.<br>
+                       • Supported client acquisition, presales activities, proposal writing, and technical documentation.<br>
+                       • Aligned business requirements with geospatial solutions for effective project delivery.</p>
+                </div>
+            </div>
+            <!-- Role 6 -->
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-date">June 2025 - Aug 2025</div>
+                <div class="timeline-content">
+                    <h3>GIS & Geospatial Intelligence Intern</h3>
+                    <h4>BEST Bengaluru Science and Technology Cluster</h4>
+                    <p>• Mapped dengue case locations using GIS tools and geocoding techniques for spatial analytics.<br>
+                       • Maintained high-accuracy spatial datasets for epidemiological mapping and intervention planning.<br>
+                       • Applied geospatial methods to analyze disease spread and optimize public health response.</p>
+                </div>
+            </div>
+            <!-- Role 7 -->
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-date">Jan 2025 - May 2025</div>
+                <div class="timeline-content">
+                    <h3>GIS Consultant</h3>
+                    <h4>PKCF - Pune Knowledge Cluster Foundation</h4>
+                    <p>• Led initiatives to enhance adoption of the Metro Aqua Line to reduce traffic and air pollution.<br>
+                       • Conducted data-driven analysis, policy research, and integrated structured data into GIS platforms.</p>
+                </div>
+            </div>
+            <!-- Role 8 -->
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-date">July 2024 - Dec 2024</div>
+                <div class="timeline-content">
+                    <h3>Associate Urban Planner</h3>
+                    <h4>Tejyog Infratech Consulting Engineers Pvt. Ltd</h4>
+                    <p>• Contributed to the Kolhapur Development Plan (DP) through civic reports and flood analysis.<br>
+                       • Managed spatial data using ArcGIS, QGIS, Google Earth, and ERDAS IMAGINE.<br>
+                       • Leveraged AI and big data for traffic forecasting, population growth, and infrastructure planning.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Projects Section -->
+    <section id="projects" class="section bg-light">
+        <h2 class="section-title">Featured Projects</h2>
+        
+        <div class="project-filters">
+            <button class="filter-btn active" data-filter="all">All Fields</button>
+            <button class="filter-btn" data-filter="mobility">Computational Mobility</button>
+            <button class="filter-btn" data-filter="resilience">Climate Resilience</button>
+            <button class="filter-btn" data-filter="analytics">Urban Analytics</button>
+        </div>
+
+        <div class="projects-grid">
+            <!-- Project 1 -->
+            <div class="project-card" data-category="mobility" onclick="openProjectModal('metro')">
+                <div class="project-img-placeholder"><i class="fas fa-subway"></i></div>
+                <div class="project-info">
+                    <span class="project-tag">QGIS | Network Analysis</span>
+                    <h3>India Metro Network Analysis</h3>
+                    <p>Developing a national-scale geospatial database mapping corridors, stations, and expansion patterns aligned with Vision 2047. Click to open metrics.</p>
+                </div>
+            </div>
+
+            <!-- Project 2 -->
+            <div class="project-card" data-category="resilience" onclick="openProjectModal('lst')">
+                <div class="project-img-placeholder"><i class="fas fa-temperature-high"></i></div>
+                <div class="project-info">
+                    <span class="project-tag">Google Earth Engine</span>
+                    <h3>LST Trend Analysis (2019-2024)</h3>
+                    <p>Performed temporal analysis of Land Surface Temperature across Maharashtra using MODIS data to assess urban heat islands. Click to open metrics.</p>
+                </div>
+            </div>
+
+            <!-- Project 3 -->
+            <div class="project-card" data-category="resilience" onclick="openProjectModal('satellite')">
+                <div class="project-img-placeholder"><i class="fas fa-brain"></i></div>
+                <div class="project-info">
+                    <span class="project-tag">Python | Sentinel-2</span>
+                    <h3>Land Use Satellite Pixel Classification</h3>
+                    <p>Classified satellite pixels as land or non-land using K-Means clustering, performing extensive EDA with Python libraries. Click to open metrics.</p>
+                </div>
+            </div>
+
+            <!-- Project 4 -->
+            <div class="project-card" data-category="analytics" onclick="openProjectModal('tax')">
+                <div class="project-img-placeholder"><i class="fas fa-calculator"></i></div>
+                <div class="project-info">
+                    <span class="project-tag">SQL | Web GIS</span>
+                    <h3>GIS-Based Property Tax Collection</h3>
+                    <p>Developed a GIS-based framework and SQL backend coupled with a dedicated tax interaction website for AMC revenue optimization. Click to open metrics.</p>
+                </div>
+            </div>
+            
+            <!-- Project 5 -->
+            <div class="project-card" data-category="analytics" onclick="openProjectModal('dengue')">
+                <div class="project-img-placeholder"><i class="fas fa-route"></i></div>
+                <div class="project-info">
+                    <span class="project-tag">Spatial Epidemiology</span>
+                    <h3>Dengue GIS Hotspot Analysis</h3>
+                    <p>Applied geospatial geocoding methods to map distribution clusters and evaluate spatial auto-correlation vectors. Click to open metrics.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Deep Dive Popup Modals -->
+    <div id="project-modal" class="modal-overlay" onclick="closeProjectModal(event)">
+        <div class="modal-wrapper">
+            <button class="modal-close" onclick="document.getElementById('project-modal').classList.remove('active')">&times;</button>
+            <div id="modal-content-target" class="modal-body"></div>
+        </div>
+    </div>
+
+    <!-- Certifications Section -->
+    <section id="certifications" class="section">
+        <h2 class="section-title">Professional Certifications & Training</h2>
+        <div class="certifications-grid">
+            <div class="cert-card">
+                <div class="cert-icon-placeholder"><i class="fas fa-chart-line"></i></div>
+                <div class="cert-info"><span class="cert-tag">Leadership</span><h3>McKinsey.org Forward Program</h3><p>Completed advanced training in strategic problem solving, digital transformation, and adaptable peer metrics.</p></div>
+            </div>
+            <div class="cert-card">
+                <div class="cert-icon-placeholder"><i class="fas fa-cubes"></i></div>
+                <div class="cert-info"><span class="cert-tag">ISRO / NRSC</span><h3>3D Modelling: Tools and Techniques</h3><p>Conducted by IIRS-ISRO via SPPU Nodal Centre. Developed strong workflows in 3D geospatial layouts.</p></div>
+            </div>
+            <div class="cert-card">
+                <div class="cert-icon-placeholder"><i class="fab fa-python"></i></div>
+                <div class="cert-info"><span class="cert-tag">Spatial Thoughts</span><h3>Python Foundation for Spatial Analysis</h3><p>Completed the cohort program instructed by Ujaval Gandhi, targeting robust Python automation scripting for GIS layers.</p></div>
+            </div>
+            <div class="cert-card">
+                <div class="cert-icon-placeholder"><i class="fas fa-satellite"></i></div>
+                <div class="cert-info"><span class="cert-tag">ISRO / IIRS</span><h3>START Training Programme</h3><p>Completed online training focusing on scientific satellite observation metrics managed by ISRO.</p></div>
+            </div>
+            <div class="cert-card">
+                <div class="cert-icon-placeholder"><i class="fas fa-cloud-sun"></i></div>
+                <div class="cert-info"><span class="cert-tag">IITM Pune</span><h3>Satellite Data Analysis for Weather</h3><p>Organized by the Indian Institute of Tropical Meteorology. Focused on space-based urban environment pollution tracking.</p></div>
+            </div>
+            <div class="cert-card">
+                <div class="cert-icon-placeholder"><i class="fas fa-database"></i></div>
+                <div class="cert-info"><span class="cert-tag">NRSC / ISRO</span><h3>ISRO Bhoonidhi Portal Systems</h3><p>Comprehensive training covering EO data discovery, access workflows, and visualization vectors applied to urban environments.</p></div>
+            </div>
+            <div class="cert-card">
+                <div class="cert-icon-placeholder"><i class="fas fa-globe-americas"></i></div>
+                <div class="cert-info"><span class="cert-tag">Esri MOOC</span><h3>GIS for Climate Action</h3><p>Acquired credentials exploring spatial modeling parameters to address local climate urban adaptation risks.</p></div>
+            </div>
+            <div class="cert-card">
+                <div class="cert-icon-placeholder"><i class="fas fa-city"></i></div>
+                <div class="cert-info"><span class="cert-tag">TISS Hyderabad</span><h3>Winter School: Studying Cities</h3><p>Organized by TISS School of Public Policy and Governance, handling complex municipal infrastructure analytics.</p></div>
+            </div>
+            <div class="cert-card">
+                <div class="cert-icon-placeholder"><i class="fas fa-road"></i></div>
+                <div class="cert-info"><span class="cert-tag">IIT-BHU Varanasi</span><h3>Highway Safety Analytics & Modelling</h3><p>Completed the short-term engineering course targeting transport safety optimization models at IIT-BHU.</p></div>
+            </div>
+            <div class="cert-card">
+                <div class="cert-icon-placeholder"><i class="fas fa-temperature-high"></i></div>
+                <div class="cert-info"><span class="cert-tag">IIT-BHU & NIT Calicut</span><h3>Urban Resilience (ENVI-met)</h3><p>Professional structural training mapping thermal distribution and microclimate zones using ENVI-met platforms.</p></div>
+            </div>
+            <div class="cert-card">
+                <div class="cert-icon-placeholder"><i class="fas fa-map-marked-alt"></i></div>
+                <div class="cert-info"><span class="cert-tag">IIT Bombay</span><h3>FOSSEE Geospatial Mapathon</h3><p>Recognized contributor mapping "Geospatial Network Alignment Analysis of Pune Metro for PMC & PCMC" using open-source GIS.</p></div>
+            </div>
+            <div class="cert-card">
+                <div class="cert-icon-placeholder"><i class="fas fa-helicopter"></i></div>
+                <div class="cert-info"><span class="cert-tag">ATI Mysuru (GoI)</span><h3>GIS & Drone Data Processing</h3><p>Completed under DILRMP programs focusing on drone operations, point cloud digitization, and land governance.</p></div>
+            </div>
+            <div class="cert-card">
+                <div class="cert-icon-placeholder"><i class="fas fa-robot"></i></div>
+                <div class="cert-info"><span class="cert-tag">UNDP / UN Tech Bank</span><h3>Frontier Tech Leaders Fellowship</h3><p>Completed Capstone Project: "Drought Monitoring in Bundelkhand Using NDVI Anomaly (2015–2024)" via Python and GEE.</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Technical Skills Section -->
+    <section id="skills" class="section bg-light">
+        <h2 class="section-title">Technical Expertise</h2>
+        <div class="skills-container">
+            <div class="skills-category">
+                <h3><i class="fas fa-code"></i> Languages & Backends</h3>
+                <div class="skill-tags"><span>Python</span><span>JavaScript</span><span>MS SQL</span><span>Java</span></div>
+            </div>
+            <div class="skills-category">
+                <h3><i class="fas fa-map"></i> Geospatial Platforms</h3>
+                <div class="skill-tags"><span>ArcGIS Pro</span><span>QGIS</span><span>Google Earth Engine</span><span>PostGIS</span><span>GDAL</span><span>ERDAS IMAGINE</span></div>
+            </div>
+            <div class="skills-category">
+                <h3><i class="fas fa-robot"></i> Geo-AI & UI Dev</h3>
+                <div class="skill-tags"><span>Machine Learning</span><span>Deep Learning Basics</span><span>React</span><span>Leaflet</span><span>Docker</span><span>Git</span></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="section">
+        <h2 class="section-title">Get In Touch</h2>
+        <div class="contact-container">
+            <div class="contact-info">
+                <p>Looking for an innovative Geospatial Data Scientist or Urban Analyst? Let's connect.</p>
+                <div class="contact-links">
+                    <a href="mailto:dudhalms20.plan@coep.ac.in"><i class="fas fa-envelope"></i> Email Profile</a>
+                    <a href="https://linkedin.com/in/mayurdudhal" target="_blank"><i class="fab fa-linkedin"></i> LinkedIn</a>
+                    <a href="https://github.com/Mayur3636" target="_blank"><i class="fab fa-github"></i> GitHub</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer"><p>&copy; 2026 Mayur Dudhal. All Rights Reserved.</p></footer>
+
+    <!-- Leaflet & Custom Interactive JS Scripting Engine -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script>
+        const projectModalData = {
+            metro: {
+                title: "India Metro Network Analysis",
+                challenge: "Standardizing heterogeneous infrastructure datasets across major Indian transit authorities to accurately simulate expansion priorities.",
+                pipeline: "Digiting corridors inside QGIS, executing network spatial accessibility topology runs, and checking compliance vectors with UN SDG Goal 11 layouts.",
+                impact: "Constructed a cohesive forecasting layer tracking optimal growth alignment for national urban planners looking ahead to Vision 2047 projections."
+            },
+            lst: {
+                title: "LST Trend Analysis (2019-2024)",
+                challenge: "Processing extensive multi-temporal regional sensor charts to extract exact surface temperature thermal degradation trends.",
+                pipeline: "Ingesting MODIS satellite constellations via Google Earth Engine API, applying cloud mask algorithms, and converting source Kelvin inputs to operational Celsius composite charts.",
+                impact: "Provided environmental planners with critical localized analytics isolating urban heat island expansion vectors across Maharashtra state limits."
+            },
+            satellite: {
+                title: "Land Use Satellite Pixel Classification",
+                challenge: "Distinguishing intricate non-urban territory borders from spatial cluster arrays using multi-spectral open satellite feeds.",
+                pipeline: "Acquiring Sentinel-2 data tiles, preprocessing vector configurations using Python, running unsupervised K-Means clustering algorithms, and rendering custom EDA layouts with Matplotlib.",
+                impact: "Accelerated computing turnaround times for remote sensing pipelines checking basic earth surface land classification parameters."
+            },
+            tax: {
+                title: "GIS-Based Property Tax Collection",
+                challenge: "Reconciling traditional database records with geometric municipal maps to reduce localized collection deficit leakages.",
+                pipeline: "Structuring relational schemas using MS SQL, conducting geo-enabled property tracking passes, and crafting a responsive customer-facing map portal using HTML/CSS.",
+                impact: "Boosted municipal asset visualization capacity for the regional administration while providing updated cadaster utility records."
+            },
+            dengue: {
+                title: "Dengue GIS Hotspot Analysis",
+                challenge: "Isolating hidden spatial distribution vectors behind municipal health outbreaks to allocate preventative supplies efficiently.",
+                pipeline: "Geocoding incoming case index text files, generating hotspot density layouts, and calculating localized spatial auto-correlation factors using advanced GIS intelligence toolsets.",
+                impact: "Equipped epidemiological response vectors at the Bengaluru Science and Technology cluster with precise coordinates to guide intervention deployments."
+            }
+        };
+
+        function openProjectModal(key) {
+            const data = projectModalData[key];
+            if(!data) return;
+            const target = document.getElementById('modal-content-target');
+            target.innerHTML = `
+                <h3>${data.title}</h3>
+                <h4>The Challenge</h4><p>${data.challenge}</p>
+                <h4>Technical Pipeline</h4><p>${data.pipeline}</p>
+                <h4>Impact Metrics</h4><p>${data.impact}</p>
+            `;
+            document.getElementById('project-modal').classList.add('active');
+        }
+
+        function closeProjectModal(e) {
+            if(e.target.id === 'project-modal') {
+                document.getElementById('project-modal').classList.remove('active');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Theme Engine
+            const themeToggle = document.getElementById('theme-toggle');
+            themeToggle.addEventListener('click', () => {
+                const el = document.documentElement;
+                const isDark = el.getAttribute('data-theme') === 'dark';
+                el.setAttribute('data-theme', isDark ? 'light' : 'dark');
+                themeToggle.querySelector('i').className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+            });
+
+            // Mobile Navigation Toggle
+            document.querySelector('.hamburger').addEventListener('click', () => {
+                document.querySelector('.nav-links').classList.toggle('active');
+            });
+
+            // Filtering Architecture
+            const filterBtns = document.querySelectorAll('.filter-btn');
+            const cards = document.querySelectorAll('.project-card');
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    filterBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    const val = btn.getAttribute('data-filter');
+                    cards.forEach(c => {
+                        c.style.display = (val === 'all' || c.getAttribute('data-category') === val) ? 'block' : 'none';
+                    });
+                });
+            });
+
+            // --- LEAFLET INTERACTIVE MAP INITIALIZATION ---
+            const map = L.map('portfolio-map', { scrollWheelZoom: false }).setView([17.5, 76.5], 5);
+            
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; OpenStreetMap &copy; CARTO'
+            }).addTo(map);
+
+            const projectLocations = [
+                { name: "IIT Bombay (Metro Rail Analytics Grid)", coords: [19.1334, 72.9133], desc: "National network database mapping expansion nodes." },
+                { name: "NIUM Hyderabad (Urban Land Classification)", coords: [17.4483, 78.3741], desc: "Hydrological routing models and satellite automated feature extractions." },
+                { name: "Parisar Pune (Urban Mobility Scorecards)", coords: [18.5204, 73.8567], desc: "Spatial network analytics updating walkability vectors." },
+                { name: "BeST Bengaluru (Computational Epidemiology)", coords: [12.9716, 77.5946], desc: "Geocoding and spatial auto-correlation dengue cluster trackers." },
+                { name: "Bundelkhand Zone (NDVI Drought Monitoring Project)", coords: [25.0000, 79.5000], desc: "UNDP Frontier Tech Leaders machine learning time series modeling." }
+            ];
+
+            projectLocations.forEach(loc => {
+                L.marker(loc.coords)
+                 .addTo(map)
+                 .bindPopup(`<strong>${loc.name}</strong><br><span style="font-size:12px;color:#94a3b8;">${loc.desc}</span>`);
+            });
+        });
+    </script>
+</body>
+</html>
